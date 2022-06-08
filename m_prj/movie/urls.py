@@ -11,6 +11,7 @@ urlpatterns = [
     path('reviews/<int:review_id>/delete/', views.ReviewDeleteView.as_view(), name='review-delete'),
     path('category/<str:slug>/', views.categories_page),
     path('tags/<str:slug>/', views.tag_page),
+    path('reviews/<int:review_id>/new_comment/',views.new_comment, name='new_comment'),
 
     # profile urls
     path('users/<int:user_id>/', views.ProfileView.as_view(), name='profile'),

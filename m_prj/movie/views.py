@@ -1,4 +1,5 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -6,8 +7,8 @@ from django.views.generic import (
 from braces.views import LoginRequiredMixin, UserPassesTestMixin
 from allauth.account.models import EmailAddress
 from allauth.account.views import PasswordChangeView
-from movie.models import Review, User, Category, Tag
-from movie.forms import ReviewForm, ProfileForm
+from movie.models import Review, User, Category, Tag, Comment
+from movie.forms import ReviewForm, ProfileForm, CommentForm
 from movie.functions import confirmation_required_redirect
 
 
@@ -37,6 +38,7 @@ class ReviewDetailView(DetailView):
         context = super(ReviewDetailView, self).get_context_data()
         context['categories'] = Category.objects.all()
         context['count_posts_without_category'] = Review.objects.filter(category=None).count()
+        context['comment_form'] = CommentForm
         return context
 
 
@@ -186,3 +188,28 @@ def tag_page(request, slug):
     }
     return render(request, 'movie/index.html', context)
 
+
+def new_comment(request, review_id):
+    if request.user.is_authenticated:
+        review = get_object_or_404(Review, pk=review_id)
+
+        if request.method == "POST":
+            comment_form = CommentForm(request.POST)
+            comment = comment_form.save(commit=False)
+            comment.author = request.user
+            comment.review = review
+            comment.save()
+            return redirect('review-detail',review_id=review_id)
+        else:
+            return redirect(review.get_absolute_url())
+    else:
+        raise PermissionDenied
+
+
+
+def comments_delete(request, review_id, comment_pk):
+    if request.user.is_authenticated:
+        comment = get_object_or_404(Comment, pk=comment_pk)
+        if request.user == comment.user:
+            comment.delete()
+    return redirect('review-detail', review_id)

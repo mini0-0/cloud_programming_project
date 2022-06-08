@@ -1,6 +1,7 @@
 {% extends "movie_base/base_with_navbar.html" %}
 
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %} {{ review.title }} | Movie {% endblock title %}
 
@@ -50,6 +51,33 @@
         {% endif %}
     </div>
 
+          <!-- Comments Form -->
+            <div class="card my-4">
+              <h5 class="card-header">Leave a Comment:</h5>
+              <div class="card-body">
+                <form method="post" action="{{ review.get_absolute_url }}new_comment/">
+                    {% csrf_token %}
+                  {{ comment_form | crispy }}
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+              </div>
+            </div>
+
+
+
+    <div>
+    {% if review.comment_set.exists %}
+        {% for comment in review.comment_set.iterator %}
+        <div class="media mb-4">
+
+          <div class="media-body" id = "comment-{{ comment.pk }}">
+            <h5 class="mt-0">{{ comment.author }} ({{ comment.dt_created }})</h5>
+              <p>{{ comment.content }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
     <div class="footer">
       <a class="back-link" href="{% url 'index' %}">&lt; 목록으로</a>
       {% if review.author == user %}

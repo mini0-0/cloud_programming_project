@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .validators import validate_no_special_characters
+from django.conf import settings
 
 
 class Tag(models.Model):
@@ -77,6 +78,17 @@ class Review(models.Model):
     def __str__(self):
         return self.title
 
+class Comment(models.Model):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    dt_created = models.DateTimeField(auto_now_add=True)
+    dt_updated = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f'{self.author} ::: {self.content}'
+
+    def get_absolute_url(self):
+        return f'{self.review.get_absolute_url()}#comment-{self.review_id}'
 
 

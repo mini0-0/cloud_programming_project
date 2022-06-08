@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Review
+from .models import User, Review, Comment
 
 
 class ReviewForm(forms.ModelForm):
@@ -30,3 +30,8 @@ class ProfileForm(forms.ModelForm):
         widgets = {
             'intro': forms.Textarea,
         }
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('content',)

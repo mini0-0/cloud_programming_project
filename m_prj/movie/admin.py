@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Review, Category, Tag
+from .models import User, Review, Category, Tag, Comment
 
 
 class CategoryAdmin(admin.ModelAdmin):
@@ -16,3 +16,4 @@ UserAdmin.fieldsets += (("Custom fields", {"fields":("nickname","profile_pic","i
 admin.site.register(Review)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(Comment)
