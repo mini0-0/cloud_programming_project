@@ -1,5 +1,5 @@
 {% extends "movie_base/base.html" %}
-
+{% load socialaccount %}
 {% load static %}
 {% load widget_tweaks %}
 
@@ -34,12 +34,15 @@
         {% endfor %}
       </div>
       <button class="cp-button" type="submit">로그인</button>
+
     </form>
-    
+
     <div class="info">
       <a class="item" href="{% url 'account_reset_password'%}">비밀번호 찾기</a>
       <a class="item" href="{% url 'account_signup' %}">회원가입</a>
+     <a class="item" href="{% provider_login_url 'google' %}" >구글 로그인</a>
     </div>
   </main>
+
 </div>
 {% endblock content %}
