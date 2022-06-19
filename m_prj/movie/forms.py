@@ -9,6 +9,8 @@ class ReviewForm(forms.ModelForm):
             "title",
             "movie_name",
             "rating",
+            "category",
+            "tags",
             "image1",
             "image2",
             "image3",
@@ -16,6 +18,7 @@ class ReviewForm(forms.ModelForm):
         ]
         widgets = {
             "rating": forms.Select,
+            "category":forms.Select,
         }
 
 

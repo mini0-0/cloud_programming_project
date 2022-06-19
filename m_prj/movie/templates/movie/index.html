@@ -4,22 +4,34 @@
 <main class="site-body">
   <div class="centent">
       <h1><p style="text-align:center;">오늘의 영화 리뷰 </p></h1>
-    </div>
-</div>
-    <div>
-        {% for c in categories %}
-             <li>
-                 <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>  <!-- post_set.count는 post에 있는 count값  -->
-             </li>
-         {% endfor %}
-            <li>
-                <a href="/category/no-category">미분류({{ no_category_count }})</a>
-            </li>
-    </div>
+  </div>
 
-  <div class="content-list max-content-width">
+{#    <div class="content">#}
+{#       {% for c in categories %}#}
+{#            <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>#}
+{#        {% endfor %}#}
+{#            <a href="category/no-category">미분류({{ no_category_count }})</a>#}
+{##}
+{#        {% if review.category %}  Movie in category '{{ review.category }}' {% endif %}#}
+{#        {% if tag %}  Movie with tag '{{ tag }}' {% endif %}#}
+{#    </div>#}
+    <div>
+{#    {% if search_info %}<small class="text-muted">{{ search_info }}</small>{% endif %}#}
+    {% if category %}  Movie in category '{{ review.category }}' {% endif %}
+
+        <div class="search">
+            <form action="{% url 'search' %}" method="GET">
+                <input type="search" name="q" placeholder="Search" style="width:700px;height:50px;font-size:30px;">
+
+            </form>
+        </div>
+
+
+
+    <div class="content-list max-content-width">
     <div class="header">
       <h2>리뷰 목록</h2>
+
       <a class="cp-ic-button circle newreview" href="{% url 'review-create' %}">리뷰 작성</a>
     </div>
 
@@ -54,6 +66,7 @@
       {% empty %}
         <p class="empty">아직 리뷰가 없어요 :(</p>
       {% endfor %}
+
       </div>
 
       {% if is_paginated %}

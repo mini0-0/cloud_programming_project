@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView
+    ListView, DetailView, CreateView, UpdateView, DeleteView,
 )
 from braces.views import LoginRequiredMixin, UserPassesTestMixin
 from allauth.account.models import EmailAddress
@@ -10,7 +10,7 @@ from allauth.account.views import PasswordChangeView
 from movie.models import Review, User, Category, Tag, Comment
 from movie.forms import ReviewForm, ProfileForm, CommentForm
 from movie.functions import confirmation_required_redirect
-
+from django.db.models import Q
 
 # Create your views here.
 
@@ -22,7 +22,7 @@ class IndexView(ListView):
     paginate_by = 4
     ordering = ["-dt_created"]
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self,**kwargs):
         context = super(IndexView, self).get_context_data()
         context['categories'] = Category.objects.all()
         context['no_category_count'] = Review.objects.filter(category=None).count()
@@ -34,10 +34,10 @@ class ReviewDetailView(DetailView):
     template_name = 'movie/review_detail.html'
     pk_url_kwarg = 'review_id'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super(ReviewDetailView, self).get_context_data()
         context['categories'] = Category.objects.all()
-        context['count_posts_without_category'] = Review.objects.filter(category=None).count()
+        context['no_category_count'] = Review.objects.filter(category=None).count()
         context['comment_form'] = CommentForm
         return context
 
@@ -80,7 +80,7 @@ class ReviewUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         else:
             return False
 
-        # or 그냥 return review.author == user
+
 
 
 class ReviewDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -168,10 +168,11 @@ def categories_page(request, slug):
         category = Category.objects.get(slug=slug)
         review_list = Review.objects.filter(category=category)
     context = {
+        'review_list': review_list,
         'categories' : Category.objects.all(),
         'no_category_count' : Review.objects.filter(category=None).count(),
         'category' : category,
-        'review_list': review_list
+
     }
     return render(request, 'movie/index.html', context)
 
@@ -179,7 +180,7 @@ def categories_page(request, slug):
 def tag_page(request, slug):
 
     tag = Tag.objects.get(slug=slug)
-    review_list = tag.post_set.all()
+    review_list = tag.review_set.all()
     context = {
         'categories' : Category.objects.all(),
         'no_category_count' : Review.objects.filter(category=None).count(),
@@ -190,6 +191,7 @@ def tag_page(request, slug):
 
 
 def new_comment(request, review_id):
+
     if request.user.is_authenticated:
         review = get_object_or_404(Review, pk=review_id)
 
@@ -203,13 +205,59 @@ def new_comment(request, review_id):
         else:
             return redirect(review.get_absolute_url())
     else:
-        raise PermissionDenied
+        return redirect('account_login')
+
+
+def comment_update(request,review_id,comment_pk):
+
+    review = get_object_or_404(Review, pk=review_id)
+    comment = get_object_or_404(Comment, pk=comment_pk)
+    form = CommentForm(instance=comment)
+
+    if request.method == "POST":
+        update_form = CommentForm(request.POST, instance=comment)
+        comment.save()
+        if update_form.is_valid():
+            update_form.save()
+            return redirect('review-detail', review_id=review_id)
+
+    return redirect(review.get_absolute_url(),{'form': form})
 
 
 
-def comments_delete(request, review_id, comment_pk):
+def comment_delete(request, review_id, comment_pk):
     if request.user.is_authenticated:
         comment = get_object_or_404(Comment, pk=comment_pk)
-        if request.user == comment.user:
+        if request.user == comment.author:
             comment.delete()
     return redirect('review-detail', review_id)
+
+
+def search(request):
+    if request.method == "GET":
+        searchKey = request.GET['q']
+
+        search_review = Review.objects.filter(Q(movie_name__icontains=searchKey))
+
+        return render(request, 'movie/search.html', {'search_review': search_review})
+
+    else:
+        return render(request, 'movie/index.html')
+
+    # class PostSearch(IndexView):
+#     paginate_by = None
+#
+#     def get_queryset(self):
+#         q = self.kwargs['q']
+#         review_list = Review.objects.filter(
+#             Q(title__contains=q) | Q(tags__name__contains=q)
+#         ).distinct()
+#         return review_list
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(PostSearch, self).get_context_data()
+#         q = self.kwargs['q']
+#         context['search_info'] = f'Search: {q} ({self.get_queryset().count()})'
+#
+#         return context
+

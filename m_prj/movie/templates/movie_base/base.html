@@ -11,13 +11,48 @@
 
 
     <title>{% block title %}Movie {% endblock title %}</title>
-      {% if tag %} with tag '{{ tag }}' {% endif %}
-      {% if category %} in category '{{ category }}' {% endif %}
 
   </head>
   <body>
-    {% block header %}{% endblock header %}
-    {% block content %}{% endblock content %}
-    {% block footer %}{% endblock footer %}
+
+
+    {% block header %}
+    {% endblock header %}
+
+  <div>
+        {% for c in categories %}
+            <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>
+        {% endfor %}
+            <a href="category/no-category">미분류({{ no_category_count }})</a>
+    </div>
+
+    <div>
+{#         <script>#}
+{#            function searchPost(){#}
+{#                let searchValue=.getElementById('search-input').value.trim();#}
+{#                if(searchValue.length>1){#}
+{#                    location.href="/search/"+searchValue+"/";#}
+{#                }#}
+{#                else{#}
+{#                    alert('검색어('+searchValue+')가 너무 짧습니다.');#}
+{#                }#}
+{#            };#}
+{#            document.getElementById('search-input').addEventListener('keyup',function(event)#}
+{#            {#}
+{#                if(event.key === "Enter"){#}
+{#                    searchPost();#}
+{#                }#}
+{#            });#}
+{#        </script>#}
+    </div>
+
+    {% block content %}
+
+    {% endblock content %}
+
+
+
+    {% block footer %}
+    {% endblock footer %}
   </body>
 </html>

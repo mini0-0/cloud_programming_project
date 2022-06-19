@@ -5,6 +5,16 @@
 
 {% block title %} {{ review.title }} | Movie {% endblock title %}
 
+{# <div class="content">#}
+{#       {% for c in categories %}#}
+{#            <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>#}
+{#        {% endfor %}#}
+{#            <a href="category/no-category">미분류({{ no_category_count }})</a>#}
+{##}
+        {% if category %}  Movie in category '{{ category }}' {% endif %}
+        {% if tag %}  Movie with tag '{{ tag }}' {% endif %}
+{#    </div>#}
+
 {% block content %}
 <main class="site-body">
   <article class="review-detail max-content-width">
@@ -39,6 +49,7 @@
         <h3> 감상평 </h3>
       <p class="content">{{ review.content|linebreaksbr }}</p>
 
+
     <hr>
         {% if review.tags.exists %}
             <br />
@@ -49,35 +60,61 @@
 
             <br />    <br />
         {% endif %}
+        <hr>
+
+       <h3>장르</h3>
+        {{ review.category }}
+        <hr>
     </div>
 
-          <!-- Comments Form -->
-            <div class="card my-4">
-              <h5 class="card-header">Leave a Comment:</h5>
-              <div class="card-body">
-                <form method="post" action="{{ review.get_absolute_url }}new_comment/">
-                    {% csrf_token %}
-                  {{ comment_form | crispy }}
-                  <button type="submit" class="btn btn-primary">Submit</button>
-                </form>
-              </div>
-            </div>
 
+      <div>
+          <h4>댓글 작성</h4>
+          <form method="post" action="{{ review.get_absolute_url }}comment/">
+              {% csrf_token %}
+              {{ comment_form | crispy }}
+              <button type="submit" class="btn btn-primary">제출</button>
+          </form>
+      </div>
 
-
+        <hr>
     <div>
+
     {% if review.comment_set.exists %}
         {% for comment in review.comment_set.iterator %}
-        <div class="media mb-4">
 
           <div class="media-body" id = "comment-{{ comment.pk }}">
-            <h5 class="mt-0">{{ comment.author }} ({{ comment.dt_created }})</h5>
+            <h5 class="mt-0">
+                작성자: {{ comment.author }} &nbsp;&nbsp; 작성일 ({{ comment.dt_created }})
+            </h5>
+
               <p>{{ comment.content }}</p>
           </div>
-        </div>
+
+    </div>
+
+            <div>
+            {% if user == comment.author %}
+             <form method="post" action="{{ review.get_absolute_url }}comment/{{ comment.pk }}/delete/">
+                 {% csrf_token %}
+                 <button type="submit">삭제</button>
+             </form>
+
+            <form method="post" action="{{ review.get_absolute_url }}comment/{{ comment.pk }}/update/">
+                    {% csrf_token %}
+                   <button type="submit">수정</button>
+             </form>
+
+            {% endif %}
+            </div>
         {% endfor %}
       {% endif %}
     </div>
+
+
+
+
+
     <div class="footer">
       <a class="back-link" href="{% url 'index' %}">&lt; 목록으로</a>
       {% if review.author == user %}

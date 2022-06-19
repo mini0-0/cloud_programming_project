@@ -86,7 +86,7 @@ class Comment(models.Model):
     dt_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.author} ::: {self.content}'
+        return f'{self.author} ::: {self.pk}'
 
     def get_absolute_url(self):
         return f'{self.review.get_absolute_url()}#comment-{self.review_id}'
