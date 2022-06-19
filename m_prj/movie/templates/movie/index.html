@@ -6,22 +6,19 @@
       <h1><p style="text-align:center;">오늘의 영화 리뷰 </p></h1>
   </div>
 
-{#    <div class="content">#}
-{#       {% for c in categories %}#}
-{#            <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>#}
-{#        {% endfor %}#}
-{#            <a href="category/no-category">미분류({{ no_category_count }})</a>#}
-{##}
-{#        {% if review.category %}  Movie in category '{{ review.category }}' {% endif %}#}
-{#        {% if tag %}  Movie with tag '{{ tag }}' {% endif %}#}
-{#    </div>#}
     <div>
-{#    {% if search_info %}<small class="text-muted">{{ search_info }}</small>{% endif %}#}
-    {% if category %}  Movie in category '{{ review.category }}' {% endif %}
+        {% for c in categories %}
+
+            <a href="{{ c.get_absolute_url }}"}>{{ c.name }} ({{ c.review_set.count }}) </a>
+        {% endfor %}
+            <a href="category/no-category">미분류({{ no_category_count }})</a>
+
+        {% if category %}<span class="badge badge-secondary">{{ category }}</span>{% endif %}
+        {% if tag %}<span class="badge badge-light"><i class="fas fa-tags"></i>{{ tag }} ({{ tag.post_set.count }})</span>{% endif %}
 
         <div class="search">
-            <form action="{% url 'search' %}" method="GET">
-                <input type="search" name="q" placeholder="Search" style="width:700px;height:50px;font-size:30px;">
+            <form action="{% url 'search' %}" method="GET" >
+                <input type="search" name="q" placeholder="Search" style=" width:700px;height:50px;font-size:30px;">
 
             </form>
         </div>
@@ -36,6 +33,8 @@
     </div>
 
       <div class="contents">
+       {% if category %}<span class="badge badge-secondary">{{ category }}</span>{% endif %}
+        {% if tag %}<span class="badge badge-light"><i class="fas fa-tags"></i>{{ tag }} ({{ tag.post_set.count }})</span>{% endif %}
       {% for review in reviews %}
         <a href="{% url 'review-detail' review.id %}">
             <section class="cp-card content">

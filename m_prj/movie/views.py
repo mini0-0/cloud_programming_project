@@ -1,16 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.core.exceptions import PermissionDenied
+
 from django.urls import reverse
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView,
+    ListView, DetailView, CreateView, UpdateView, DeleteView, View
 )
+from django.contrib.contenttypes.models import ContentType
+
 from braces.views import LoginRequiredMixin, UserPassesTestMixin
-from allauth.account.models import EmailAddress
 from allauth.account.views import PasswordChangeView
-from movie.models import Review, User, Category, Tag, Comment
+from movie.models import Review, User, Category, Tag, Comment, Like
 from movie.forms import ReviewForm, ProfileForm, CommentForm
-from movie.functions import confirmation_required_redirect
 from django.db.models import Q
+from .mixins import LoginAndVerificationRequiredMixin, LoginAndOwnershipRequiredMixin
+
 
 # Create your views here.
 
@@ -38,17 +40,24 @@ class ReviewDetailView(DetailView):
         context = super(ReviewDetailView, self).get_context_data()
         context['categories'] = Category.objects.all()
         context['no_category_count'] = Review.objects.filter(category=None).count()
-        context['comment_form'] = CommentForm
+        context['form'] = CommentForm()
+        context['review_ctype_id'] = ContentType.objects.get(model='review').id
+        context['comment_ctype_id'] = ContentType.objects.get(model='comment').id
+
+        user=self.request.user
+        if user.is_authenticated:
+            review = self.object
+            context['likes_review'] = Like.objects.filter(user=user, review=review).exists()
+            context['liked_comments'] = Comment.objects.filter(review=review).filter(likes__user=user)
+
         return context
 
 
-class ReviewCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+class ReviewCreateView(LoginAndVerificationRequiredMixin, CreateView):
     model = Review
     form_class = ReviewForm
     template_name = 'movie/review_form.html'
 
-    redirect_unauthenticated_users = True
-    raise_exception = confirmation_required_redirect
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -57,49 +66,43 @@ class ReviewCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     def get_success_url(self):
         return reverse("review-detail", kwargs={"review_id": self.object.id})
 
-    def test_func(self, user):
-        return EmailAddress.objects.filter(user=user, verified=True).exists()
 
 
-class ReviewUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+
+class ReviewUpdateView(LoginAndOwnershipRequiredMixin, UpdateView):
     model = Review
     form_class = ReviewForm
     template_name = 'movie/review_form.html'
     pk_url_kwarg = 'review_id'
 
-    raise_exception = True
-    redirect_unauthenticated_users = False
-
     def get_success_url(self):
         return reverse("review-detail", kwargs={"review_id": self.object.id})
 
-    def test_func(self, user):
-        review = self.get_object()
-        if review.author == user:
-            return True
-        else:
-            return False
 
-
-
-
-class ReviewDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class ReviewDeleteView(LoginAndOwnershipRequiredMixin, DeleteView):
     model = Review
     template_name = 'movie/review_confirm_delete.html'
     pk_url_kwarg = 'review_id'
 
-    raise_exception = True
-    redirect_unauthenticated_users = False
-
     def get_success_url(self):
         return reverse('index')
 
-    def test_func(self, user):
-        review = self.get_object()
-        if review.author == user:
-            return True
-        else:
-            return False
+
+class ProcessLikeView(LoginAndVerificationRequiredMixin, View):
+    http_method_names = ['post']
+
+    def post(self, request, *args,**kwargs):
+        like, created = Like.objects.get_or_create(
+            user = self.request.user,
+            content_type_id=self.kwargs.get('content_type_id'),
+            object_id=self.kwargs.get('object_id'),
+        )
+
+        if not created:
+            like.delete()
+
+        return redirect(self.request.META['HTTP_REFERER'])
+
 
 
 class ProfileView(DetailView):
@@ -148,6 +151,7 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ProfileForm
     template_name = 'movie/profile_update_form.html'
 
+
     def get_object(self, queryset=None):
         return self.request.user
 
@@ -189,39 +193,37 @@ def tag_page(request, slug):
     }
     return render(request, 'movie/index.html', context)
 
+class CommentCreateView(LoginAndVerificationRequiredMixin, CreateView):
+    http_method_names = ['post']
 
-def new_comment(request, review_id):
+    model = Comment
+    form_class = CommentForm
 
-    if request.user.is_authenticated:
-        review = get_object_or_404(Review, pk=review_id)
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.review = Review.objects.get(id=self.kwargs.get('review_id'))
+        return super().form_valid(form)
 
-        if request.method == "POST":
-            comment_form = CommentForm(request.POST)
-            comment = comment_form.save(commit=False)
-            comment.author = request.user
-            comment.review = review
-            comment.save()
-            return redirect('review-detail',review_id=review_id)
-        else:
-            return redirect(review.get_absolute_url())
-    else:
-        return redirect('account_login')
+    def get_success_url(self):
+        return reverse('review-detail', kwargs={'review_id':self.kwargs.get('review_id')})
+
+class CommentUpdateView(LoginAndOwnershipRequiredMixin, UpdateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'movie/comment_update_form.html'
+    pk_url_kwarg = 'comment_id'
+
+    def get_success_url(self):
+        return reverse('review-detail', kwargs={'review_id': self.object.review.id})
 
 
-def comment_update(request,review_id,comment_pk):
+class CommentDeleteView(LoginAndOwnershipRequiredMixin, DeleteView):
+    model = Comment
+    template_name = 'movie/comment_confirm_delete.html'
+    pk_url_kwarg = 'comment_id'
 
-    review = get_object_or_404(Review, pk=review_id)
-    comment = get_object_or_404(Comment, pk=comment_pk)
-    form = CommentForm(instance=comment)
-
-    if request.method == "POST":
-        update_form = CommentForm(request.POST, instance=comment)
-        comment.save()
-        if update_form.is_valid():
-            update_form.save()
-            return redirect('review-detail', review_id=review_id)
-
-    return redirect(review.get_absolute_url(),{'form': form})
+    def get_success_url(self):
+        return reverse('review-detail', kwargs={'review_id': self.object.review.id})
 
 
 
@@ -243,21 +245,4 @@ def search(request):
 
     else:
         return render(request, 'movie/index.html')
-
-    # class PostSearch(IndexView):
-#     paginate_by = None
-#
-#     def get_queryset(self):
-#         q = self.kwargs['q']
-#         review_list = Review.objects.filter(
-#             Q(title__contains=q) | Q(tags__name__contains=q)
-#         ).distinct()
-#         return review_list
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(PostSearch, self).get_context_data()
-#         q = self.kwargs['q']
-#         context['search_info'] = f'Search: {q} ({self.get_queryset().count()})'
-#
-#         return context
 

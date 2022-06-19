@@ -2,18 +2,11 @@
 
 {% load static %}
 {% load crispy_forms_tags %}
+{% load widget_tweaks %}
 
 {% block title %} {{ review.title }} | Movie {% endblock title %}
 
-{# <div class="content">#}
-{#       {% for c in categories %}#}
-{#            <a href={{ c.get_absolute_url }}>{{ c.name }} ({{ c.review_set.count }}) </a>#}
-{#        {% endfor %}#}
-{#            <a href="category/no-category">미분류({{ no_category_count }})</a>#}
-{##}
-        {% if category %}  Movie in category '{{ category }}' {% endif %}
-        {% if tag %}  Movie with tag '{{ tag }}' {% endif %}
-{#    </div>#}
+
 
 {% block content %}
 <main class="site-body">
@@ -68,51 +61,98 @@
     </div>
 
 
-      <div>
-          <h4>댓글 작성</h4>
-          <form method="post" action="{{ review.get_absolute_url }}comment/">
+    <div class="like-comment-block">
+      <div class="like-comment-header">
+          {% if user.is_authenticated %}
+          <form action="{% url  'process-like' review_ctype_id review.id %}" method="post">
               {% csrf_token %}
-              {{ comment_form | crispy }}
-              <button type="submit" class="btn btn-primary">제출</button>
+             <button class="like-button" type="submit">
+                 {% if likes_review %}
+                     <img width="21px" src="{% static 'movie/icons/ic-heart-orange.svg' %}" alt="filed like icon">
+                     {% else %}
+                     <img width="21px" src="{% static 'movie/icons/ic-heart.svg' %}" alt="like icon">
+                     {% endif %}
+
+                 <span> 좋아요 {{ review.likes.count }}</span>
+            </button>
           </form>
+          {% else %}
+            <a class="like-button" href="{% url 'account_login' %}?next={% url 'review-detail' review.id %}">
+                <img width="21px" src="{% static 'movie/icons/ic-heart.svg' %}" alt="like icon">
+                 <span> 좋아요 {{ review.likes.count }}</span>
+            </a>
+
+          {% endif %}
+        <div class="comment-info">
+          <img src="{% static 'movie/icons/ic-comment.svg' %}" alt="comment icon">
+          <span> 댓글 {{ review.comments.count }}</span>
+        </div>
       </div>
-
-        <hr>
-    <div>
-
-    {% if review.comment_set.exists %}
-        {% for comment in review.comment_set.iterator %}
-
-          <div class="media-body" id = "comment-{{ comment.pk }}">
-            <h5 class="mt-0">
-                작성자: {{ comment.author }} &nbsp;&nbsp; 작성일 ({{ comment.dt_created }})
-            </h5>
-
-              <p>{{ comment.content }}</p>
-          </div>
-
-    </div>
-
-            <div>
-            {% if user == comment.author %}
-             <form method="post" action="{{ review.get_absolute_url }}comment/{{ comment.pk }}/delete/">
-                 {% csrf_token %}
-                 <button type="submit">삭제</button>
-             </form>
-
-            <form method="post" action="{{ review.get_absolute_url }}comment/{{ comment.pk }}/update/">
-                    {% csrf_token %}
-                   <button type="submit">수정</button>
-             </form>
-
+        <form class="comment-create-form" action="{% url 'comment-create'  review.id %}" method="post">
+            {% csrf_token %}
+            {% if user.is_authenticated %}
+                {{ form.content | attr:"placeholder: 댓글 내용을 입력해주세요" | add_class:"cp-input" }}
+                <button class="cp-button small" type="submit">등록</button>
+            {% else %}
+                <a href="{% url 'account_login' %}?next={% url 'review-detail' review.id %}">
+                    {{ form.content | attr:"placeholder: 댓글을 작성하려면 로그인해주세요" | add_class:"cp-input" |attr:"disabled" }}
+                    <button class="cp-button small secondary" type="submit" disabled>등록</button>
+                </a>
             {% endif %}
+
+        </form>
+    <hr>
+      <div class="comment-list">
+        {% for comment in review.comments.all %}
+          <div class="comment">
+            <div class="comment-header">
+              <a href="{% url 'profile' comment.author.id %}">
+                <div class="author">
+                  <div class="cp-avatar" style="background-image: url('{{ comment.author.profile_pic.url }}')"></div>
+                  <span>{{ comment.author.nickname }}</span>
+                </div>
+              </a>
+              {% if user == comment.author %}
+                <div class="buttons">
+                  <a href="{% url 'comment-delete' comment.id %}">삭제</a>
+                  <span> | </span>
+                  <a href="{% url 'comment-update' comment.id %}">수정</a>
+                </div>
+              {% endif %}
+
             </div>
+            <div class="comment-content">
+              {{ comment.content|linebreaksbr }}
+            </div>
+            <div class="comment-footer">
+              <div class="comment-date">
+                {{ comment.dt_created|date:"Y년 n월 j일" }}
+              </div>
+              {% if user.is_authenticated %}
+                  <form action="{% url  'process-like' comment_ctype_id comment.id %}" method="post">
+                      {% csrf_token %}
+                     <button class="like-button" type="submit">
+                         {% if comment in liked_comments %}
+                            <img width="21px" src="{% static 'movie/icons/ic-heart-orange.svg' %}" alt="filed like icon">
+                         {% else %}
+                            <img width="21px" src="{% static 'movie/icons/ic-heart.svg' %}" alt="like icon">
+                         {% endif %}
+                         <span> 좋아요 {{ comment.likes.count }}</span>
+                    </button>
+                  </form>
+                  {% else %}
+                    <a class="like-button" href="{% url 'account_login' %}?next={% url 'review-detail' review.id %}">
+                        <img width="21px" src="{% static 'movie/icons/ic-heart.svg' %}" alt="like icon">
+                         <span> 좋아요 {{ comment.likes.count }}</span>
+                    </a>
+
+                  {% endif %}
+            <hr>
+            </div>
+          </div>
         {% endfor %}
-      {% endif %}
+      </div>
     </div>
-
-
-
 
 
     <div class="footer">

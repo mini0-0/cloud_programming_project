@@ -12,9 +12,14 @@ urlpatterns = [
     path('<int:review_id>/delete/', views.ReviewDeleteView.as_view(), name='review-delete'),
     path('cateogry/<str:slug>/', views.categories_page),
     path('tags/<str:slug>/', views.tag_page),
-    path('<int:review_id>/comment/',views.new_comment, name='create-comment'),
-    path('<int:review_id>/comment/<int:comment_pk>/update/', views.comment_update, name='comment-update'),
-    path('<int:review_id>/comment/<int:comment_pk>/delete/', views.comment_delete, name='comment_delete'),
+
+    #comment
+    path('<int:review_id>/comments/create/',views.CommentCreateView.as_view(),name='comment-create'),
+    path('comments/<int:comment_id>/edit/', views.CommentUpdateView.as_view(), name='comment-update'),
+    path('comments/<int:comment_id>/delete/', views.CommentDeleteView.as_view(), name='comment-delete'),
+
+
+    path('like/<int:content_type_id>/<int:object_id>/',views.ProcessLikeView.as_view(),name='process-like'),
 
     # profile urls
     path('users/<int:user_id>/', views.ProfileView.as_view(), name='profile'),
