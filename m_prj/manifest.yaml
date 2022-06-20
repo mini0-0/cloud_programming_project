@@ -1,6 +1,6 @@
 ---
 applications:
-- name: blog_django
+- name: movie
   buildpack: python_buildpack
   memory: 512M
   instances: 1
