@@ -1,0 +1,16 @@
+{% extends "movie_base/base_with_navbar.html" %}
+
+{% block content %}
+<div class="search">
+    <h2>검색결과</h2>
+    <br>
+    {% for review in search_review %}
+        제목 : {{ review.title }} <br>
+        영화 제목 : {{  review.movie_name}} <br>
+        평점 : {{ review.rating }}<hr>
+    {% empty %}
+        검색 결과가 없습니다.
+    {% endfor %}
+
+</div>
+{% endblock content %}

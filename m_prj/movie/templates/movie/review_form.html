@@ -1,0 +1,120 @@
+{% extends "movie_base/base_with_navbar.html" %}
+
+{% load widget_tweaks %}
+
+{% block title %}
+  {% if review %}
+      {{ review.title }}
+  {% else %}
+    새 포스트 
+  {% endif %} | Movie
+{% endblock title %}
+
+{% block content %}
+<main class="site-body">
+  <form class="review-form max-content-width" method="post" autocomplete="off" enctype="multipart/form-data">
+    {% csrf_token %}
+{#    {{ request.path }}#}
+
+{#    <form method="post" enctype="multipart/form-data"> {%  csrf_token %}#}
+{#        <table>#}
+{#            {{ form }}#}
+{#        </table>#}
+{#        <button type="submit" class="btn btn-primary float-right">Submit</button>#}
+{#    </form>#}
+{##}
+
+    <div class="title">
+      {{ form.title|add_class:"cp-input"|attr:"placeholder:제목"}}
+      {% for error in form.title.errors %}
+        <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+    </div>
+    <div class="title">
+      {{ form.movie_name|add_class:"cp-input"|add_error_class:"error"|attr:"placeholder:영화 이름"}}
+      {% for error in form.restaurant_name.errors %}
+        <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+    </div>
+
+    <div class="rating">
+      <div class="cp-ic-button">
+         {{ form.rating }}
+        {% for error in form.rating.errors %}
+          <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+      </div>
+    </div>
+
+   <div class="rating">
+      <div class="cp-ic-button">
+         {{ form.category }}
+        {% for error in form.rating.errors %}
+          <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+      </div>
+    </div>
+
+    <div class="rating">
+      <div class="cp-ic-button">
+         {{ form.tags }}
+        {% for error in form.rating.errors %}
+          <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+      </div>
+    </div>
+
+
+    <div class="content">
+      {{ form.content|add_class:"cp-input"|add_error_class:"error"|attr:"placeholder:리뷰를 작성해 주세요."}}
+      {% for error in form.content.errors %}
+        <div class="error-message"> {{error}}</div>
+      {% endfor  %}
+    <div class="file">
+      <div class="file-content">
+        {% if review.image1 %}
+          <img src="{{ review.image1.url }}">
+        {% endif %}
+        <div>
+          {{ form.image1 }}
+          {% for error in form.image1.errors %}
+            <div class="error-message"> {{error}}</div>
+          {% endfor  %}
+        </div>
+      </div>
+    </div>
+    <div class="file">
+      <div class="file-content">
+       {% if review.image2 %}
+          <img src="{{ review.image2.url }}">
+        {% endif %}
+        <div>
+           {{ form.image2 }}
+           {% for error in form.image2.errors %}
+            <div class="error-message"> {{error}}</div>
+          {% endfor  %}
+        </div>
+      </div>
+    </div>
+    <div class="file">
+      <div class="file-content">
+       {% if review.image3 %}
+          <img src="{{ review.image3.url }}">
+        {% endif %}
+        <div>
+           {{ form.image3 }}
+           {% for error in form.image3.errors %}
+            <div class="error-message"> {{error}}</div>
+          {% endfor  %}
+        </div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <a class="cp-button secondary cancel" href="{% if review %}{% url 'review-detail' review.id %}{% else %}{% url 'index' %}{% endif %}">취소</a>
+      <button class="cp-button submit" type="submit">완료</button>
+    </div>
+  </form>
+{#{{ form.media }}#}
+</main>
+{% endblock content %}
